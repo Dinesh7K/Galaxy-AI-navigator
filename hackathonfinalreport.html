@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Report: The Galaxy AI Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices: 
+        1. Problem Statement: Goal: Inform. Method: Icon-driven key points. Interaction: None. Justification: Quickly grounds the user in the core challenges.
+        2. Our Solution (IDEA): Goal: Inform. Method: Detailed explanation with custom bullet points. Interaction: None. Justification: Introduces the "Galaxy AI Navigator" clearly and elaborates on its core components and problem-solving approach.
+        3. Key AI Foundation (MCTS): Goal: Organize/Inform. Method: Custom interactive diagram. Interaction: User clicks a "Next Step" button to cycle through the four phases of MCTS, with detailed examples and visual highlighting. Justification: Demystifies MCTS effectively. Library: Vanilla JS.
+        4. Key AI Foundation (AI Approach Comparison): Goal: Compare. Method: Interactive tabbed view. Interaction: User clicks tabs (MCTS, LLM, Rule-Based) to update a comparison grid. Justification: Allows direct, user-driven comparison of AI paradigms. Library: Vanilla JS.
+        5. Key AI Foundation (Sparse Attention): Goal: Organize/Inform. Method: Custom interactive diagram (step-by-step explanation) AND Interactive tabbed view (for comparison). Interaction: User clicks a "Next Step" button for the step-by-step, and clicks tabs for the comparison. Justification: Provides both a deep dive into the mechanism and a clear comparative advantage. Library: Vanilla JS.
+        6. Our Specialized Agents: Goal: Organize/Inform. Method: Tabbed content for each agent. Interaction: User clicks agent tabs to reveal mission, detailed "without/with" scenarios using bullet points. Justification: Clearly distinguishes each agent's role and impact. Library: Vanilla JS.
+        7. System Flow & Collaboration (Concept Diagram): Goal: Organize/Inform. Method: Structured HTML/CSS diagram with enhanced visual flow. Interaction: None (static visual). Justification: Provides a clear, detailed overview of the system architecture and agent interactions.
+        8. Business Impact & Revenue Transformation (WHY): Goal: Inform/Compare. Method: Bar chart and detailed text explanations with custom bullet points. Viz: A Chart.js bar chart showing projected improvements. Interaction: Chart tooltips. Justification: Quantifies the benefits and connects them to key features. Library: Chart.js.
+        9. Competitive Edge & Next Steps: Goal: Inform. Method: Text sections. Interaction: None. Justification: Positions the solution and outlines future development.
+        10. Conclusion: Goal: Inform/Persuade. Method: Strong summary statement. Interaction: None. Justification: Reinforces the core message.
+    -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .active-nav { color: #2563eb; border-bottom-color: #2563eb; }
+        .inactive-nav { border-bottom-color: transparent; }
+        .mcts-step-card, .sparse-attention-step-card { transition: all 0.3s ease-in-out; }
+        .mcts-step-card.active, .sparse-attention-step-card.active { background-color: #1a202c; border-color: #2563eb; transform: translateY(-4px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        .comparison-tab.active { background-color: #2563eb; color: white; }
+        .comparison-tab { transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; }
+        .agent-tab.active { background-color: #2563eb; color: white; border-color: #2563eb;}
+        .agent-tab { transition: all 0.2s ease-in-out; border-bottom-width: 2px; border-color:transparent; }
+        .chart-container { position: relative; width: 100%; max-width: 700px; margin-left: auto; margin-right: auto; height: 45vh; max-height: 350px; }
+        @media (min-width: 768px) { .chart-container { height: 300px; } }
+
+        /* Flow Diagram Specific Styles */
+        .flow-diagram-box {
+            border: 1px solid #4a5568; /* gray-700 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            background-color: #2d3748; /* gray-800 */
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #e2e8f0; /* gray-200 */
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: transform 0.2s ease-in-out;
+        }
+        .flow-diagram-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .flow-arrow-down {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            color: #a0aec0; /* gray-500 */
+            margin: 0.5rem 0;
+            line-height: 1;
+        }
+        .flow-arrow-horizontal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #a0aec0; /* gray-500 */
+            margin: 0 0.5rem;
+            line-height: 1;
+        }
+        .flow-label {
+            font-size: 0.8rem;
+            color: #a0aec0; /* gray-500 */
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+        .flow-section-title {
+            font-weight: 600;
+            color: #e2e8f0; /* gray-200 */
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .custom-bullet {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        .custom-bullet-icon {
+            color: #2563eb; /* blue-600 */
+            font-size: 1.25rem;
+            line-height: 1;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
+
+    <header class="bg-gray-950/80 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-800 shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-2xl text-blue-600">Galaxy AI</span>
+                    <span class="font-semibold text-2xl ml-2 text-gray-100">Navigator</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-1">
+                        <a href="#problem" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">Problem</a>
+                        <a href="#solution" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">Solution</a>
+                        <a href="#concepts" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">Key Concepts</a>
+                        <a href="#agents" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">Our Agents</a>
+                        <a href="#flow" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">System Flow</a>
+                        <a href="#impact" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">Impact</a>
+                        <a href="#next-steps" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800 transition-colors duration-200">Next Steps</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="bg-gradient-to-br from-gray-950 to-gray-800 text-white py-24 sm:py-32">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-5xl md:text-6xl font-bold tracking-tight">The Galaxy AI Navigator</h1>
+                <p class="mt-6 text-xl md:text-2xl opacity-90 max-w-3xl mx-auto">Proactive Agentic AI for Samsung's Next Generation: Precision E-commerce for Flagship Launches like the Galaxy Z Flip 7 & Z Fold 7.</p>
+                <a href="#problem" class="mt-10 inline-block bg-blue-600 text-white font-semibold px-10 py-4 rounded-lg shadow-xl hover:bg-blue-700 transition-all duration-300 transform hover:scale-105">Explore the Vision</a>
+            </div>
+        </section>
+
+        <section id="problem" class="py-20 sm:py-24 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Problem Statement</h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">The Reactive Trap: Why Current E-commerce Fails Flagship Launches</p>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">For Samsung's E-commerce Operations Managers and Supply Chain Leads, launching flagships like the Galaxy Z Flip 7 or Z Fold 7 in today's hyper-dynamic market presents critical challenges due to reactive systems.</p>
+                </div>
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:shadow-2xl">
+                        <div class="flex justify-center text-5xl font-bold text-red-400 mb-4">📉</div>
+                        <h3 class="text-xl font-semibold text-gray-100 mb-2">Missed Revenue Opportunities</h3>
+                        <p class="text-gray-300 text-sm">Slow reaction to competitor pricing for foldables. *Example: Competitor drops Galaxy Z Flip 7 price by $100. Hours of delay = millions in lost sales and shifting market share.*</p>
+                    </div>
+                    <div class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:shadow-2xl">
+                        <div class="flex justify-center text-5xl font-bold text-amber-400 mb-4">⚙️</div>
+                        <h3 class="text-xl font-semibold text-gray-100 mb-2">Operational Headaches</h3>
+                        <p class="text-gray-300 text-sm">Unforeseen component delays for complex devices. *Example: Galaxy Z Fold 7 camera module 1-day delay identified late = costly air freight, production slowdowns, cascade of delayed pre-orders.*</p>
+                    </div>
+                    <div class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700 transition-all duration-300 hover:shadow-2xl">
+                        <div class="flex justify-center text-5xl font-bold text-purple-400 mb-4">😡</div>
+                        <h3 class="text-xl font-semibold text-gray-100 mb-2">Customer Frustration</h3>
+                        <p class="text-gray-300 text-sm">Overwhelmed support for new feature queries. *Example: Thousands asking about Z Flip 7 AI battery life. Slow/generic support = unhappy customers & pre-order cancellations.*</p>
+                    </div>
+                </div>
+                <p class="mt-10 text-center text-xl font-semibold text-gray-200">Core Impact: Lost Revenue, Inefficient Operations, Diminished Customer Trust.</p>
+            </div>
+        </section>
+        
+        <section id="solution" class="py-20 sm:py-24 bg-gray-800 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Idea</h2>
+                <p class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Our Solution: The Galaxy AI Navigator</p>
+                <p class="mt-6 text-lg md:text-xl opacity-90 max-w-3xl mx-auto">The Galaxy AI Navigator is a paradigm shift from reactive firefighting to proactive, intelligent orchestration of Samsung's e-commerce operations. It's an advanced Agentic AI system designed to ensure every flagship launch, from the Galaxy Z Flip 7 to the Z Fold 7, is executed with unparalleled precision and profitability.</p>
+                <div class="mt-10">
+                    <h3 class="text-2xl font-semibold mb-4">How it Works: The Core of Proactive Intelligence</h3>
+                    <ul class="space-y-3 text-left max-w-2xl mx-auto text-lg opacity-90">
+                        <li class="custom-bullet"><span class="custom-bullet-icon">🧠</span> <span>At its heart are <span class="text-blue-400 font-bold">specialized, autonomous AI agents</span>. Each agent is an expert in its domain (e.g., Supply Chain, Market, Customer Service).</span></li>
+                        <li class="custom-bullet"><span class="custom-bullet-icon">💡</span> <span>These agents are powered by <span class="text-blue-400 font-bold">Monte Carlo Tree Search (MCTS)</span> for strategic, long-term planning, allowing them to simulate future scenarios and make optimal multi-step decisions under uncertainty.</span></li>
+                        <li class="custom-bullet"><span class="custom-bullet-icon">⚡</span> <span>They process vast amounts of real-time data efficiently using <span class="text-blue-400 font-bold">Deepseek Native Sparse Attention</span>, ensuring they always have the most relevant context without being overwhelmed.</span></li>
+                        <li class="custom-bullet"><span class="custom-bullet-icon">🤝</span> <span>The agents <span class="text-blue-400 font-bold">collaborate seamlessly via robust APIs</span>, sharing critical insights and coordinating actions to achieve collective goals, transforming fragmented operations into a unified, intelligent ecosystem.</span></li>
+                    </ul>
+                </div>
+                <div class="mt-10">
+                    <h3 class="text-2xl font-semibold mb-4">Addressing the Problem Head-On:</h3>
+                    <ul class="space-y-3 text-left max-w-2xl mx-auto text-lg opacity-90">
+                        <li class="custom-bullet"><span class="custom-bullet-icon">💰</span> <span><span class="text-blue-400 font-bold">Maximizes Revenue:</span> By anticipating market shifts and dynamically optimizing pricing and promotional strategies, we capture every sales opportunity that reactive systems miss.</span></li>
+                        <li class="custom-bullet"><span class="custom-bullet-icon">⏱️</span> <span><span class="text-blue-400 font-bold">Streamlines Operations:</span> Proactively predicts and mitigates supply chain disruptions, reducing costly last-minute interventions and ensuring smooth product availability.</span></li>
+                        <li class="custom-bullet"><span class="custom-bullet-icon">💖</span> <span><span class="text-blue-400 font-bold">Enhances Customer Satisfaction:</span> Delivers proactive, personalized support and communication, addressing concerns before they escalate and building stronger brand loyalty.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="concepts" class="py-20 sm:py-24 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                     <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Key Features / Components</h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">Key AI Foundations: The Power of Distinction</p>
+                </div>
+
+                <div class="mt-16">
+                    <h3 class="text-2xl font-bold tracking-tight text-gray-100 sm:text-3xl text-center">Monte Carlo Tree Search (MCTS): The Strategic Planner</h3>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto text-center">MCTS is our AI's "grandmaster chess player," simulating millions of future scenarios to find optimal long-term strategies, not just immediate best steps. It excels where rules are rigid and LLMs lack planning depth.</p>
+                    
+                    <div class="mt-12 max-w-5xl mx-auto lg:flex lg:items-start lg:gap-12">
+                        <div class="lg:w-2/5 space-y-3">
+                            <div id="mcts-step-card-1" class="mcts-step-card p-4 rounded-lg border-2 border-gray-700 active text-gray-100">
+                                <h4 class="font-semibold text-gray-100">1. Selection</h4>
+                                <p class="text-gray-300 text-sm mt-1">Choose the most promising path from current state, balancing exploration & known good options.</p>
+                            </div>
+                            <div id="mcts-step-card-2" class="mcts-step-card p-4 rounded-lg border-2 border-gray-700 text-gray-100">
+                                <h4 class="font-semibold text-gray-100">2. Expansion</h4>
+                                <p class="text-gray-300 text-sm mt-1">Add new, unexplored actions (child nodes) to the tree from the selected node.</p>
+                            </div>
+                            <div id="mcts-step-card-3" class="mcts-step-card p-4 rounded-lg border-2 border-gray-700 text-gray-100">
+                                 <h4 class="font-semibold text-gray-100">3. Simulation</h4>
+                                <p class="text-gray-300 text-sm mt-1">From new nodes, run quick, randomized "rollouts" to see possible long-term outcomes.</p>
+                            </div>
+                            <div id="mcts-step-card-4" class="mcts-step-card p-4 rounded-lg border-2 border-gray-700 text-gray-100">
+                                 <h4 class="font-semibold text-gray-100">4. Backpropagation</h4>
+                                <p class="text-gray-300 text-sm mt-1">Use simulation results to update statistics of all nodes in the path, teaching the tree what works.</p>
+                            </div>
+                             <button id="next-mcts-step-btn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300">Next MCTS Step</button>
+                        </div>
+                        <div class="lg:w-3/5 mt-8 lg:mt-0 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col justify-center min-h-[400px]">
+                            <div id="mcts-viz-icon" class="text-7xl text-blue-500 mb-4 text-center transition-transform duration-500 ease-in-out">🌲</div>
+                            <h4 id="mcts-viz-title" class="text-xl font-bold text-gray-100 text-center mb-2">The Decision Tree</h4>
+                            <p id="mcts-viz-desc" class="mt-2 text-gray-300 text-sm leading-relaxed"></p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold tracking-tight text-gray-100 sm:text-3xl text-center mt-20">AI Approach Comparison: MCTS vs. LLMs vs. Rule-Based Systems</h3>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto text-center">Not all AI is created equal. Explore how MCTS stands apart for complex, sequential decision-making in e-commerce.</p>
+                    <div class="mt-12 max-w-4xl mx-auto">
+                        <div class="flex justify-center border-b border-gray-700 mb-6">
+                            <button data-ai-approach="mcts" class="ai-approach-tab comparison-tab py-3 px-5 text-sm font-medium rounded-t-lg active">MCTS</button>
+                            <button data-ai-approach="llm" class="ai-approach-tab comparison-tab py-3 px-5 text-sm font-medium text-gray-300 hover:bg-gray-700 rounded-t-lg">LLMs</button>
+                            <button data-ai-approach="rules" class="ai-approach-tab comparison-tab py-3 px-5 text-sm font-medium text-gray-300 hover:bg-gray-700 rounded-t-lg">Rule-Based</button>
+                        </div>
+                        <div id="ai-approach-comparison-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </div>
+
+                    <h3 class="text-2xl font-bold tracking-tight text-gray-100 sm:text-3xl text-center mt-20">Deepseek Native Sparse Attention: The Smart Data Filter</h3>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto text-center">Samsung's e-commerce generates astronomical data. Sparse Attention is our AI's super-efficient filter, intelligently focusing only on the most important information to avoid computational bottlenecks.</p>
+                    <div class="mt-12 max-w-5xl mx-auto lg:flex lg:items-start lg:gap-12">
+                        <div class="lg:w-2/5 space-y-3">
+                            <div id="sparse-attention-step-card-1" class="sparse-attention-step-card p-4 rounded-lg border-2 border-gray-700 active text-gray-100">
+                                <h4 class="font-semibold text-gray-100">1. The Challenge of Full Attention</h4>
+                                <p class="text-gray-300 text-sm mt-1">Processing every piece of data for context becomes computationally expensive at scale (N²).</p>
+                            </div>
+                            <div id="sparse-attention-step-card-2" class="sparse-attention-step-card p-4 rounded-lg border-2 border-gray-700 text-gray-100">
+                                <h4 class="font-semibold text-gray-100">2. The Sparse Solution</h4>
+                                <p class="text-gray-300 text-sm mt-1">Intelligently focuses on only the most relevant data relationships, ignoring the noise.</p>
+                            </div>
+                            <div id="sparse-attention-step-card-3" class="sparse-attention-step-card p-4 rounded-lg border-2 border-gray-700 text-gray-100">
+                                 <h4 class="font-semibold text-gray-100">3. How it Works</h4>
+                                <p class="text-gray-300 text-sm mt-1">Employs specialized patterns or learned masks to identify and attend to crucial features.</p>
+                            </div>
+                            <div id="sparse-attention-step-card-4" class="sparse-attention-step-card p-4 rounded-lg border-2 border-gray-700 text-gray-100">
+                                 <h4 class="font-semibold text-gray-100">4. Key Benefits</h4>
+                                <p class="text-gray-300 text-sm mt-1">Enables unparalleled scalability, real-time insights, and improved efficiency.</p>
+                            </div>
+                             <button id="next-sparse-attention-step-btn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300">Next Sparse Attention Step</button>
+                        </div>
+                        <div class="lg:w-3/5 mt-8 lg:mt-0 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col justify-center min-h-[400px]">
+                            <div id="sparse-attention-viz-icon" class="text-7xl text-blue-500 mb-4 text-center transition-transform duration-500 ease-in-out">🤯</div>
+                            <h4 id="sparse-attention-viz-title" class="text-xl font-bold text-gray-100 text-center mb-2">The Challenge of Full Attention</h4>
+                            <p id="sparse-attention-viz-desc" class="mt-2 text-gray-300 text-sm leading-relaxed"></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-20 max-w-4xl mx-auto">
+                        <h3 class="text-2xl font-bold tracking-tight text-gray-100 sm:text-3xl text-center mb-6">Sparse Attention: A Comparative Advantage</h3>
+                        <div class="flex justify-center border-b border-gray-700 mb-6">
+                            <button data-sparse-attention-compare="benefits" class="sparse-attention-compare-tab comparison-tab py-3 px-5 text-sm font-medium rounded-t-lg active">Sparse Attention Benefits</button>
+                            <button data-sparse-attention-compare="limitations" class="sparse-attention-compare-tab comparison-tab py-3 px-5 text-sm font-medium text-gray-300 hover:bg-gray-700 rounded-t-lg">Traditional Attention Limitations</button>
+                        </div>
+                        <div id="sparse-attention-compare-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+        
+        <section id="agents" class="py-20 sm:py-24 bg-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Key Features / Components</h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">Our Specialized Agents: Collaborative Intelligence for Galaxy Z Flip 7 & Z Fold 7</p>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">The 'Galaxy AI Navigator' is powered by three specialized, MCTS-driven agents, working seamlessly together via APIs to optimize every aspect of the e-commerce journey for flagship launches.</p>
+                </div>
+                
+                <div class="mt-12 max-w-5xl mx-auto">
+                    <div class="flex justify-center flex-wrap gap-3 sm:gap-4 border-b border-gray-700 pb-6 mb-8">
+                        <button data-agent="supply-chain" class="agent-tab px-5 py-2.5 rounded-md font-semibold text-sm shadow-md active">Supply Chain Commander</button>
+                        <button data-agent="market-dynamo" class="agent-tab px-5 py-2.5 rounded-md font-semibold text-sm shadow-md bg-gray-700 hover:bg-gray-600 text-gray-100">Market Dynamo</button>
+                        <button data-agent="customer-whisperer" class="agent-tab px-5 py-2.5 rounded-md font-semibold text-sm shadow-md bg-gray-700 hover:bg-gray-600 text-gray-100">Customer Whisperer</button>
+                    </div>
+
+                    <div id="agent-details" class="bg-gray-900 p-8 rounded-xl shadow-xl border border-gray-700 text-gray-100">
+                        </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="flow" class="py-20 sm:py-24 bg-gray-900 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Core Flow / Concept Diagram</h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">System Flow & Collaboration: A Seamless, Intelligent Ecosystem</p>
+                    <p class="mt-4 text-lg opacity-90 max-w-3xl mx-auto">The Galaxy AI Navigator orchestrates success through a continuous cycle of data ingestion, intelligent planning, coordinated action, and learning.</p>
+                </div>
+                <div class="mt-16 max-w-5xl mx-auto bg-gray-800 p-8 rounded-xl shadow-xl border border-gray-700">
+                    <div class="flow-section-title text-blue-400">Phase 1: Data Ingestion & Intelligent Filtering</div>
+                    <p class="text-center text-gray-300 text-sm mb-4">The system continuously collects vast amounts of data from various sources.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flow-diagram-box">E-commerce Systems (Sales, Inventory, CRM)</div>
+                        <div class="flow-diagram-box">External Data (Market, Competitors, Logistics Feeds)</div>
+                        <div class="flow-diagram-box">Customer Channels (Social Media, Support Tickets)</div>
+                    </div>
+                    <div class="flow-arrow-down">⬇️</div>
+                    <div class="flow-diagram-box bg-blue-900 border-blue-700 text-blue-200 font-semibold">
+                        Sparse Attention Layer (Smart Data Filter)
+                        <div class="flow-label text-blue-300">Efficiently processes and prioritizes massive datasets, focusing on relevance.</div>
+                    </div>
+
+                    <div class="flow-arrow-down">⬇️</div>
+                    <div class="flow-section-title text-blue-400 mt-8">Phase 2: Agent Network & MCTS Planning</div>
+                    <p class="text-center text-gray-300 text-sm mb-4">Each specialized agent autonomously plans complex strategies using MCTS, informed by the filtered data.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                        <div class="flow-diagram-box flex flex-col justify-center">
+                            Supply Chain Commander
+                            <div class="flow-label">MCTS: Optimize logistics, prevent stockouts.</div>
+                        </div>
+                        <div class="flow-arrow-horizontal hidden md:flex">↔️</div>
+                        <div class="flow-diagram-box flex flex-col justify-center">
+                            Market Dynamo
+                            <div class="flow-label">MCTS: Optimize pricing, promotions.</div>
+                        </div>
+                        <div class="flow-arrow-horizontal hidden md:flex">↔️</div>
+                        <div class="flow-diagram-box flex flex-col justify-center">
+                            Customer Whisperer
+                            <div class="flow-label">MCTS: Proactive customer engagement.</div>
+                        </div>
+                    </div>
+                    <p class="text-center text-gray-300 text-sm mt-2">(Agents communicate and coordinate seamlessly via APIs to ensure holistic optimization.)</p>
+
+                    <div class="flow-arrow-down">⬇️</div>
+                    <div class="flow-section-title text-blue-400 mt-8">Phase 3: Coordinated Action & Outputs</div>
+                    <p class="text-center text-gray-300 text-sm mb-4">The agents execute their optimal, coordinated decisions, leading to tangible business outcomes.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flow-diagram-box bg-green-900 border-green-700 text-green-200 font-semibold">Optimized Pricing & Promotions</div>
+                        <div class="flow-diagram-box bg-green-900 border-green-700 text-green-200 font-semibold">Logistics & Inventory Adjustments</div>
+                        <div class="flow-diagram-box bg-green-900 border-green-700 text-green-200 font-semibold">Personalized Customer Outreach</div>
+                    </div>
+
+                    <div class="flow-arrow-down">⬇️</div>
+                    <div class="flow-section-title text-blue-400 mt-8">Phase 4: Feedback & Continuous Learning</div>
+                    <p class="text-center text-gray-300 text-sm mb-4">Real-world results are fed back into the system, enabling continuous improvement of agent strategies.</p>
+                    <div class="flow-diagram-box bg-purple-900 border-purple-700 text-purple-200 font-semibold">
+                        Real-World Outcomes & Performance Data
+                        <div class="flow-label">System learns and refines strategies for future decisions.</div>
+                    </div>
+                    <div class="flow-arrow-down">🔄</div>
+                    <p class="text-center text-gray-300 text-sm">This continuous loop ensures the Galaxy AI Navigator is always adapting and improving.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="py-20 sm:py-24 bg-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                 <div class="text-center">
+                    <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Why This Idea Matters</h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">Business Need & Revenue Impact for Samsung</p>
+                    <p class="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">The Galaxy AI Navigator directly addresses Samsung's need for proactive optimization, promising significant, quantifiable benefits across all products, especially flagship launches.</p>
+                </div>
+                <div class="mt-16 grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <div class="custom-bullet">
+                            <span class="custom-bullet-icon">📈</span>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-100">Maximized Revenue & Profitability (Est. 20-30% Increase)</h3>
+                                <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
+                                    <li>Market Dynamo (MCTS) dynamically optimizes Z Flip 7 pricing & bundles.</li>
+                                    <li>Supply Chain Commander prevents stockouts, ensuring sales opportunities are captured.</li>
+                                    <li>Intelligent pricing adapts to competitor moves and demand elasticity.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="custom-bullet">
+                            <span class="custom-bullet-icon">✅</span>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-100">Unparalleled Operational Efficiency (Est. 15-25% Cost Reduction)</h3>
+                                <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
+                                    <li>Supply Chain Commander (MCTS & Sparse Attention) predicts & mitigates Z Fold 7 delays.</li>
+                                    <li>Reduces costly rush shipping and minimizes inventory holding expenses.</li>
+                                    <li>Optimizes logistics and production schedules proactively.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="custom-bullet">
+                            <span class="custom-bullet-icon">😊</span>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-100">Superior Customer Experience & Loyalty (Est. 25-35% Satisfaction Increase)</h3>
+                                <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
+                                    <li>Customer Whisperer (MCTS & Sparse Attention) provides proactive, personalized support.</li>
+                                    <li>Addresses concerns like S25 AI battery life before they escalate.</li>
+                                    <li>Builds trust and reduces churn through timely, relevant communication.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="custom-bullet">
+                            <span class="custom-bullet-icon">🏆</span>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-100">Unbeatable Competitive Advantage</h3>
+                                <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
+                                    <li>Holistic, API-coordinated system enables rapid, optimized responses to market shifts.</li>
+                                    <li>Positions Samsung as the leader in intelligent, adaptive e-commerce.</li>
+                                    <li>Outpaces competitors relying on reactive or siloed systems.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900 p-8 rounded-xl shadow-xl border border-gray-700">
+                        <div class="chart-container">
+                            <canvas id="impactChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="next-steps" class="py-20 sm:py-24 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-base font-semibold text-blue-400 tracking-wide uppercase">Competitive Analysis & Next Steps</h2>
+                    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl">Outpacing the Competition: Our Strategic Roadmap</p>
+                </div>
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+                        <h3 class="text-xl font-semibold text-gray-100 mb-3">Competitive Analysis</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-300">
+                            <li>Superiority: MCTS-driven multi-agent approach excels where rule-based systems are inflexible, and general LLMs lack systematic planning for complex, sequential business decisions.</li>
+                            <li>Uniqueness: Combines deep strategic planning with real-time data efficiency for a truly differentiated solution.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+                        <h3 class="text-xl font-semibold text-gray-100 mb-3">MVP (Hackathon Execution Plan)</h3>
+                         <p class="text-gray-300 mb-2">Focus: Core intelligence & agent collaboration.</p>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-300">
+                            <li>Simulated E-commerce Environment (Z Flip 7/Z Fold 7).</li>
+                            <li>Core Agent Logic: MCTS for Market Dynamo & Supply Chain Commander.</li>
+                            <li>API Communication Demo (mock data exchange).</li>
+                            <li>Impact Visualization Dashboard (proactive vs. reactive benefits).</li>
+                        <ol>
+                    </div>
+                </div>
+                 <div class="mt-12 bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700 max-w-3xl mx-auto">
+                    <h3 class="text-xl font-semibold text-gray-100 mb-3 text-center">Next Steps (Beyond Hackathon)</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-300">
+                        <li>Phase 2: Pilot deployment with real Samsung data (controlled product category).</li>
+                        <li>Phase 3: Full multi-agent integration & expansion to wider product catalogs.</li>
+                        <li>Phase 4: Advanced MCTS variants, real-time LLM integration for richer customer interactions (e.g., personalized content generation).</li>
+                    ol>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="py-20 sm:py-24 bg-gradient-to-br from-gray-950 to-gray-800 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-4xl font-bold tracking-tight sm:text-5xl">The Future is Proactive. The Future is the Galaxy AI Navigator.</h2>
+                <p class="mt-6 text-xl opacity-90 max-w-3xl mx-auto">The 'Galaxy AI Navigator' represents a fundamental shift from reactive problem-solving to proactive, intelligent optimization for Samsung's e-commerce. By combining the strategic foresight of MCTS with the data efficiency of Sparse Attention, we can transform every product launch, every customer interaction, and every supply chain decision into a strategic advantage. This isn't just an idea; it's the blueprint for the next generation of e-commerce intelligence at Samsung.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-950 text-gray-400">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-gray-300">Galaxy AI Navigator - Interactive Report</p>
+            <p class="mt-2 text-sm text-gray-500">A conceptual demonstration for the Samsung E-commerce Hackathon.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- AI Approach Comparison Data & Logic (MCTS vs LLM vs Rule-Based) ---
+            const aiApproachComparisonData = {
+                mcts: [
+                    { title: 'Adaptability to Dynamic Markets', value: 'High', detail: 'Adapts dynamically to changing conditions.' },
+                    { title: 'Learning Capability', value: 'High', detail: 'Learns from simulations and improves iteratively.' },
+                    { title: 'Handling Uncertainty', value: 'Excellent', detail: 'Designed for complex, uncertain environments; simulates scenarios.' },
+                    { title: 'Suitability for Sequential Planning', value: 'High', detail: 'Core strength is sequential decision-making; builds a decision tree.' },
+                    { title: 'Scalability', value: 'High', detail: 'Scales well to large search spaces by focusing resources.' },
+                    { title: 'Primary Use Case', value: 'Strategic', detail: 'Dynamic pricing, inventory optimization, logistics.' },
+                    { title: 'Computational Efficiency', value: 'High', detail: 'Efficient for complex, sequential decision-making problems.' },
+                ],
+                llm: [
+                    { title: 'Adaptability to Dynamic Markets', value: 'Low', detail: 'Struggles with real-time interaction and environment data.' },
+                    { title: 'Learning Capability', value: 'Limited', detail: 'Lacks task incentives for sequential learning from environment.' },
+                    { title: 'Handling Uncertainty', value: 'Poor', detail: 'Struggles with probabilistic outcomes and lacks systematic exploration.' },
+                    { title: 'Suitability for Sequential Planning', value: 'Low', detail: 'Struggles with structured planning, multi-step reasoning, lack grounding.' },
+                    { title: 'Scalability', value: 'Moderate', detail: 'High computational cost for complex reasoning tasks.' },
+                    { title: 'Primary Use Case', value: 'Generative', detail: 'Content generation, chatbots, sentiment analysis.' },
+                    { title: 'Computational Efficiency', value: 'Variable', detail: 'Can be high for complex reasoning, but less efficient for structured planning.' },
+                ],
+                rules: [
+                    { title: 'Adaptability to Dynamic Markets', value: 'Low', detail: 'Inflexible; requires manual updates to change behavior.' },
+                    { title: 'Learning Capability', value: 'None', detail: 'Fixed rules do not allow for learning from experience.' },
+                    { title: 'Handling Uncertainty', value: 'Poor', detail: 'Deterministic nature struggles with ambiguous information.' },
+                    { title: 'Suitability for Sequential Planning', value: 'Low', detail: 'Relies on predefined scripts with limited scope.' },
+                    { title: 'Scalability', value: 'Low', detail: 'Complexity increases exponentially with the number of rules.' },
+                    { title: 'Primary Use Case', value: 'Basic', detail: 'Simple automation, FAQs, basic recommendations.' },
+                    { title: 'Computational Efficiency', value: 'High', detail: 'Efficient for simple, fixed tasks.' },
+                ]
+            };
+
+            const aiApproachComparisonContent = document.getElementById('ai-approach-comparison-content');
+            const aiApproachTabs = document.querySelectorAll('.ai-approach-tab');
+
+            function updateAIApproachComparison(aiType) {
+                if (aiApproachComparisonContent) {
+                    aiApproachComparisonContent.innerHTML = '';
+                    const data = aiApproachComparisonData[aiType];
+                    data.forEach(item => {
+                        const card = `
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm animate-fade-in text-gray-100">
+                                <h3 class="font-semibold text-gray-100">${item.title}</h3>
+                                <p class="text-2xl font-bold text-blue-400 mt-2">${item.value}</p>
+                                <p class="text-sm text-gray-300 mt-1">${item.detail}</p>
+                            </div>
+                        `;
+                        aiApproachComparisonContent.innerHTML += card;
+                    });
+                }
+            }
+
+            if (aiApproachTabs.length > 0) {
+                aiApproachTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        aiApproachTabs.forEach(t => {
+                            t.classList.remove('text-blue-600', 'border-blue-600');
+                            t.classList.add('text-gray-300', 'hover:bg-gray-700');
+                        });
+                        tab.classList.add('text-blue-600', 'border-blue-600');
+                        tab.classList.remove('text-gray-300', 'hover:bg-gray-700');
+                        updateAIApproachComparison(tab.dataset.aiApproach);
+                    });
+                });
+            }
+            updateAIApproachComparison('mcts');
+
+
+            // --- Sparse Attention Explanation Logic ---
+            const sparseAttentionStepCards = document.querySelectorAll('.sparse-attention-step-card');
+            const nextSparseAttentionStepBtn = document.getElementById('next-sparse-attention-step-btn');
+            const sparseAttentionVizIcon = document.getElementById('sparse-attention-viz-icon');
+            const sparseAttentionVizTitle = document.getElementById('sparse-attention-viz-title');
+            const sparseAttentionVizDesc = document.getElementById('sparse-attention-viz-desc');
+
+            const sparseAttentionVizData = [
+                { icon: '🤯', title: '1. The Challenge of Full Attention', desc: `In traditional attention mechanisms, every piece of data interacts with every other piece. This leads to a quadratic increase in computation as the data size grows (N²).
+                <br><br>
+                *Example: Analyzing years of Samsung's global sales data (millions of transactions, product details, customer interactions) to find subtle patterns. A full attention model would try to connect every single data point to every other, quickly becoming computationally overwhelming and slow.*` },
+                { icon: '�', title: '2. The Sparse Solution', desc: `Sparse Attention intelligently focuses on only the most relevant relationships within the data, ignoring less critical connections. It's like having a highly efficient filter.
+                <br><br>
+                *Example: Instead of analyzing every single transaction from the last 5 years, Sparse Attention might prioritize recent sales data, interactions from high-value customers, and specific product categories (like foldables), significantly reducing the computational load while retaining crucial insights.*` },
+                { icon: '🎯', title: '3. How it Works', desc: `It employs specialized patterns or learned masks to identify and attend to only the most important tokens or features. This allows for efficient processing of vast contexts.
+                <br><br>
+                *Example: When analyzing customer reviews for the Z Flip 7, Sparse Attention might learn to prioritize keywords related to 'battery life' or 'hinge durability' and their immediate context, rather than processing every word in every review equally. This allows for faster, more precise sentiment analysis.*` },
+                { icon: '✨', title: '4. Key Benefits', desc: `Sparse Attention enables unparalleled scalability, real-time insights, and improved computational efficiency for processing massive datasets.
+                <br><br>
+                *Example: Our Market Dynamo agent can now process real-time competitor pricing data and Samsung's entire historical sales catalog in milliseconds, allowing for instant, data-driven pricing adjustments for the Z Fold 7. This speed is critical for maintaining a competitive edge in dynamic markets.*` },
+            ];
+
+            let currentSparseAttentionStep = 0;
+
+            if (nextSparseAttentionStepBtn) {
+                nextSparseAttentionStepBtn.addEventListener('click', () => {
+                    currentSparseAttentionStep = (currentSparseAttentionStep + 1) % sparseAttentionVizData.length;
+                    displaySparseAttentionStep(currentSparseAttentionStep);
+                });
+                displaySparseAttentionStep(0);
+            }
+
+            function displaySparseAttentionStep(stepIndex) {
+                if (sparseAttentionVizIcon && sparseAttentionVizTitle && sparseAttentionVizDesc) {
+                    sparseAttentionStepCards.forEach((card, index) => {
+                        if (index === stepIndex) {
+                            card.classList.add('active');
+                        } else {
+                            card.classList.remove('active');
+                        }
+                    });
+                    const vizData = sparseAttentionVizData[stepIndex];
+                    sparseAttentionVizIcon.textContent = vizData.icon;
+                    sparseAttentionVizTitle.textContent = vizData.title;
+                    sparseAttentionVizDesc.innerHTML = vizData.desc; 
+
+                    sparseAttentionVizIcon.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        sparseAttentionVizIcon.style.transform = 'scale(1)';
+                    }, 100);
+                }
+            }
+            
+            // --- Sparse Attention Comparison Data & Logic ---
+            const sparseAttentionCompareData = {
+                'benefits': [ // Represents "With Sparse Attention" for data processing capability
+                    { title: 'Data Processing Efficiency', value: 'Highly Optimized', detail: 'Intelligently focuses on relevant data, scales to massive datasets without performance degradation.' },
+                    { title: 'Context Window Capacity', value: 'Vast', detail: 'Can efficiently process years of historical data and complex real-time logs for comprehensive understanding.' },
+                    { title: 'Scalability for Big Data', value: 'Excellent', detail: 'Designed to handle immense data volumes and high-dimensional features without computational bottlenecks.' },
+                    { title: 'Insight Extraction Precision', value: 'Superior', detail: 'Quickly identifies critical patterns and anomalies from noise, leading to more accurate insights.' },
+                    { title: 'Real-time Adaptability', value: 'High', detail: 'Enables rapid analysis and decision-making in dynamic environments due to efficient data processing.' },
+                ],
+                'limitations': [ // Represents "Without Sparse Attention" (traditional dense attention limitations)
+                    { title: 'Data Processing Efficiency', value: 'Limited', detail: 'Struggles with very long sequences due to quadratic complexity (N²), becoming slow and resource-intensive.' },
+                    { title: 'Context Window Capacity', value: 'Constrained', detail: 'Often limited to recent or smaller data chunks, missing long-term patterns.' },
+                    { title: 'Scalability for Big Data', value: 'Challenged', detail: 'High computational and memory cost for vast datasets, making it impractical for large-scale e-commerce data.' },
+                    { title: 'Insight Extraction Precision', value: 'Lower', detail: 'Can be overwhelmed by irrelevant data, potentially missing subtle signals or correlations within large datasets.' },
+                    { title: 'Real-time Adaptability', value: 'Moderate', detail: 'Performance degrades with increasing data, making real-time analysis difficult for large-scale, dynamic scenarios.' },
+                ]
+            };
+
+            const sparseAttentionCompareContent = document.getElementById('sparse-attention-compare-content');
+            const sparseAttentionCompareTabs = document.querySelectorAll('.sparse-attention-compare-tab');
+
+            function updateSparseAttentionCompare(type) {
+                if (sparseAttentionCompareContent) {
+                    sparseAttentionCompareContent.innerHTML = '';
+                    const data = sparseAttentionCompareData[type];
+                    data.forEach(item => {
+                        const card = `
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm animate-fade-in text-gray-100">
+                                <h3 class="font-semibold text-gray-100">${item.title}</h3>
+                                <p class="text-2xl font-bold ${type === 'benefits' ? 'text-blue-400' : 'text-red-400'} mt-2">${item.value}</p>
+                                <p class="text-sm text-gray-300 mt-1">${item.detail}</p>
+                            </div>
+                        `;
+                        sparseAttentionCompareContent.innerHTML += card;
+                    });
+                }
+            }
+
+            if (sparseAttentionCompareTabs.length > 0) {
+                sparseAttentionCompareTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        sparseAttentionCompareTabs.forEach(t => {
+                            t.classList.remove('text-blue-600', 'border-blue-600');
+                            t.classList.add('text-gray-300', 'hover:bg-gray-700');
+                        });
+                        tab.classList.add('text-blue-600', 'border-blue-600');
+                        tab.classList.remove('text-gray-300', 'hover:bg-gray-700');
+                        updateSparseAttentionCompare(tab.dataset.sparseAttentionCompare);
+                    });
+                });
+            }
+            updateSparseAttentionCompare('benefits'); // Default to "Sparse Attention Benefits"
+
+
+            // --- MCTS Explanation Logic ---
+            const mctsStepCards = document.querySelectorAll('.mcts-step-card');
+            const nextMctsStepBtn = document.getElementById('next-mcts-step-btn');
+            const mctsVizIcon = document.getElementById('mcts-viz-icon');
+            const mctsVizTitle = document.getElementById('mcts-viz-title');
+            const mctsVizDesc = document.getElementById('mcts-viz-desc');
+            
+            const mctsVizData = [
+                { icon: '🌲', title: '1. Selection', desc: `The process begins at the root of the decision tree, representing the current state. The agent selects the most promising path based on known performance and exploration potential.
+                <br><br>
+                *Example: For the Z Flip 7, the agent prioritizes exploring a 'price drop + marketing bundle' strategy, as it showed promise in past simulations for similar product launches. It chooses the path that balances maximizing immediate sales with avoiding future stockouts.*` },
+                { icon: '➕', title: '2. Expansion', desc: `A new action is added to the tree, extending the set of possibilities. This typically involves creating a new child node from the selected node.
+                <br><br>
+                *Example: From the chosen 'price drop + marketing bundle' path for the Z Flip 7, the agent adds a new decision node: 'Offer 10% discount on Z Fold 7 for 24 hours to specific customer segments'. This creates a new branch to explore a specific, targeted pricing action. It might also expand 'expedite shipping for critical components' if supply chain data suggests a potential bottleneck, adding a new dimension to its decision tree.*` },
+                { icon: '🎲', title: '3. Simulation', desc: `From the new node, a random "rollout" is performed to quickly simulate a potential long-term outcome. This is a fast 'what-if' scenario to gauge potential outcomes without exhaustive calculation.
+                <br><br>
+                *Example: For the '10% off Z Fold 7' node, the agent simulates: 'If we offer 10% off the Z Fold 7, how many units sell? How do competitors react to this specific discount? What\'s the projected profit after 3 days, considering inventory levels and potential future demand?' It might also simulate: 'If we expedite shipping, how quickly do components arrive, and what's the overall cost-benefit for avoiding stockouts and preventing customer dissatisfaction?'*` },
+                { icon: '🧠', title: '4. Backpropagation', desc: `The simulation result is propagated back up the tree, updating the value of each decision. This process refines the algorithm's understanding of which decisions are most advantageous.
+                <br><br>
+                *Example: The simulated profit from the '10% off Z Fold 7' scenario is used to update the overall attractiveness score of that specific pricing path. If the simulation showed high profit, that path becomes more appealing for future selections, making the agent smarter. Similarly, the cost-benefit of expediting shipping is fed back to refine supply chain decisions, continually improving the agent's strategic capabilities.*` },
+            ];
+
+            let currentMctsStep = 0;
+
+            if (nextMctsStepBtn) {
+                 nextMctsStepBtn.addEventListener('click', () => {
+                    currentMctsStep = (currentMctsStep + 1) % mctsVizData.length;
+                    displayMctsStep(currentMctsStep);
+                });
+                displayMctsStep(0);
+            }
+           
+            function displayMctsStep(stepIndex) {
+                if (mctsVizIcon && mctsVizTitle && mctsVizDesc) {
+                    mctsStepCards.forEach((card, index) => {
+                        if (index === stepIndex) {
+                            card.classList.add('active');
+                        } else {
+                            card.classList.remove('active');
+                        }
+                    });
+                    const vizData = mctsVizData[stepIndex];
+                    mctsVizIcon.textContent = vizData.icon;
+                    mctsVizTitle.textContent = vizData.title;
+                    mctsVizDesc.innerHTML = vizData.desc; 
+
+                    mctsVizIcon.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        mctsVizIcon.style.transform = 'scale(1)';
+                    }, 100);
+                }
+            }
+            
+            // --- Agent Details Logic ---
+            const agentData = {
+                'supply-chain': {
+                    title: 'The "Supply Chain Commander" Agent',
+                    mission: 'Ensure optimal inventory and smooth logistics for the Galaxy Z Flip 7 / Z Fold 7, proactively addressing disruptions.',
+                    without: `
+                        <h4 class="font-bold text-xl text-gray-100 mb-3">Without Our Agent (The Reactive Approach)</h4>
+                        <p class="text-gray-300 mb-2">Problem: Reactive detection of delays, leading to costly and damaging consequences.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-1">
+                            <li>Manual flagging of issues, causing significant delays.</li>
+                            <li>Reactive scramble: "Do we pay for rush shipping? Do we tell customers their pre-order is delayed?"</li>
+                            <li>Leads to stockouts, costly rush orders, and damaged customer trust.</li>
+                        </ul>
+                        <p class="text-gray-300 mt-2">Example: A critical camera module for the Z Fold 7 faces a 1-day delay. Without our agent, this is detected late, leading to frantic, expensive air freight and potential launch delays.</p>
+                    `,
+                    with: `
+                        <h4 class="font-bold text-xl text-gray-100 mb-3">With Our Agent (MCTS & Sparse Attention)</h4>
+                        <p class="text-gray-300 mb-2">Proactive detection and strategic planning for optimal supply chain resilience.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-1">
+                            <li>Proactive Detection (via Sparse Attention): Efficiently scans all global logistics data, identifying subtle risks and anomalies early.</li>
+                            <li>Strategic Planning (via MCTS): Simulates mitigation options (air freight, re-routing, alternative suppliers) to find the optimal sequence of actions.</li>
+                            <li>Outcome: Pre-booked urgent freight, adjusted factory schedules, minimal disruption, informed other agents.</li>
+                        </ul>
+                        <p class="text-gray-300 mt-2">Example: The Z Fold 7 camera module delay is detected immediately. The agent simulates various options, recommends pre-booking air freight and adjusting production before stockouts occur, minimizing cost and ensuring a smooth launch.</p>
+                    `
+                },
+                'market-dynamo': {
+                    title: 'The "Market Dynamo" Agent',
+                    mission: 'Optimize Galaxy Z Flip 7 / Z Fold 7 pricing and promotions to maximize revenue and profit.',
+                    without: `
+                        <h4 class="font-bold text-xl text-gray-100 mb-3">Without Our Agent (The Reactive Approach)</h4>
+                        <p class="text-gray-300 mb-2">Problem: Simple price matching, often leading to suboptimal profits.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-1">
+                            <li>Immediate price matching to competitors, eroding profit margins.</li>
+                            <li>Missed opportunities for strategic bundles or timed offers.</li>
+                            <li>Struggles to balance pricing with inventory constraints.</li>
+                        </ul>
+                        <p class="text-300 mt-2">Example: A competitor launches their foldable slightly cheaper. Without our agent, the Z Flip 7 price is matched immediately, despite tight supply, leading to lower overall profits.</p>
+                    `,
+                    with: `
+                        <h4 class="font-bold text-xl text-gray-100 mb-3">With Our Agent (MCTS & Sparse Attention)</h4>
+                        <p class="text-gray-300 mb-2">Comprehensive market analysis and strategic pricing for optimized revenue.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-1">
+                            <li>Comprehensive Market Analysis (via Sparse Attention): Real-time competitor pricing, sales velocity, supply updates, and historical trends.</li>
+                            <li>Strategic Pricing (via MCTS): Simulates various pricing/promotion sequences (price drops, bundles, timed offers) considering long-term profit and supply constraints.</li>
+                            <li>Outcome: Optimized profit, strategic competitive response, balanced with inventory.</li>
+                        </ul>
+                        <p class="text-gray-300 mt-2">Example: Competitor launches cheaper foldable. The agent simulates: 'Match price vs. hold price + free Buds 7 vs. wait 2 days then price adjust.' It then recommends 'hold price + free Buds 7' to maintain a premium position and optimize profit given supply constraints.</p>
+                    `
+                },
+                'customer-whisperer': {
+                    title: 'The "Customer Whisperer" Agent',
+                    mission: 'Enhance customer satisfaction and loyalty for Galaxy Z Flip 7 / Z Fold 7 customers through proactive, personalized interactions.',
+                    without: `
+                        <h4 class="font-bold text-xl text-gray-100 mb-3">Without Our Agent (The Reactive Approach)</h4>
+                        <p class="text-gray-300 mb-2">Problem: Reactive, generic customer support, leading to frustration and churn risk.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-1">
+                            <li>Customers wait for support, then receive generic FAQs.</li>
+                            <li>Common pre-order questions lead to high call volumes.</li>
+                            <li>Missed opportunities to proactively address concerns or build loyalty.</li>
+                        </ul>
+                        <p class="text-gray-300 mt-2">Example: Early Galaxy S25 pre-order customers show a common question about new AI features' energy consumption. Without our agent, they call support and get a generic FAQ link.</p>
+                    `,
+                    with: `
+                        <h4 class="font-bold text-xl text-gray-100 mb-3">With Our Agent (MCTS & Sparse Attention)</h4>
+                        <p class="text-gray-300 mb-2">Proactive, personalized engagement for enhanced customer satisfaction and loyalty.</p>
+                        <ul class="list-disc list-inside text-gray-300 space-y-1">
+                            <li>Proactive Sentiment Analysis (via Sparse Attention): Efficiently scans all customer interactions, social media, and forums for emerging concerns.</li>
+                            <li>Personalized Engagement (via MCTS): Simulates optimal sequences of communication (video guide, Q&A, discount) based on customer profile and issue.</li>
+                            <li>Outcome: Enhanced satisfaction, reduced churn, lower support load.</li>
+                        </ul>
+                        <p class="text-gray-300 mt-2">Example: Trending concern about S25 AI battery life detected. The agent recommends proactive personalized video guides and Q&A invitations to all pre-order customers, addressing concerns before they even complain. It also proactively informs and compensates customers for any supply-induced delivery delays.</p>
+                    `
+                }
+            };
+
+            const agentTabs = document.querySelectorAll('.agent-tab');
+            const agentDetailsContainer = document.getElementById('agent-details');
+
+            function updateAgentDetails(agentType) {
+                if (agentDetailsContainer) {
+                    const data = agentData[agentType];
+                    agentDetailsContainer.innerHTML = `
+                        <h3 class="text-2xl font-bold text-gray-100">${data.title}</h3>
+                        <p class="mt-2 text-lg text-blue-400 font-semibold">${data.mission}</p>
+                        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div>${data.without}</div>
+                            <div>${data.with}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            if (agentTabs.length > 0) {
+                agentTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        agentTabs.forEach(t => {
+                            t.classList.remove('active', 'bg-blue-600', 'text-white');
+                            t.classList.add('bg-gray-700', 'text-gray-100', 'hover:bg-gray-600');
+                        });
+                        tab.classList.add('active', 'bg-blue-600', 'text-white');
+                        tab.classList.remove('bg-gray-700', 'text-gray-100', 'hover:bg-gray-600');
+                        updateAgentDetails(tab.dataset.agent);
+                    });
+                });
+            }
+            updateAgentDetails('supply-chain');
+
+            // --- Impact Chart Logic ---
+            const ctx = document.getElementById('impactChart');
+            if (ctx) {
+                const impactChart = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Revenue Growth', 'Operational Cost Reduction', 'Customer Satisfaction Increase', 'Inventory Efficiency Gain'],
+                        datasets: [{
+                            label: 'Traditional Systems (Baseline)',
+                            data: [5, 0, 10, 5],
+                            backgroundColor: 'rgba(148, 163, 184, 0.6)', /* gray-500 */
+                            borderColor: 'rgba(148, 163, 184, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Galaxy AI Navigator (Projected)',
+                            data: [25, 20, 35, 30],
+                            backgroundColor: 'rgba(59, 130, 246, 0.6)', /* blue-500 */
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    },
+                                    color: '#cbd5e1' /* gray-300 */
+                                },
+                                grid: {
+                                    color: 'rgba(71, 85, 105, 0.4)' /* gray-700 with opacity */
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Projected Improvement (%)',
+                                    color: '#e2e8f0' /* gray-200 */
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#cbd5e1' /* gray-300 */
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Projected Business Impact of Galaxy AI Navigator',
+                                font: {
+                                    size: 16
+                                },
+                                color: '#e2e8f0' /* gray-200 */
+                            },
+                            legend: {
+                                labels: {
+                                    color: '#e2e8f0' /* gray-200 */
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Navigation Highlighting ---
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-nav', 'text-blue-600');
+                            link.classList.add('inactive-nav');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active-nav', 'text-blue-600');
+                            }
+                        });
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+        });
+    </script>
+</body>
+</html>
+�
